@@ -1,0 +1,17 @@
+{
+  "type": "bundle",
+  "version": 1,
+  "binaries": ["git-lfs"],
+  "env": [
+    {
+      "key": "PATH",
+      "type": "path",
+      "required": true,
+      "value": "${installPath}",
+      "visibility": "private"
+    }
+  ],
+  "entrypoints": {
+    "git-lfs": {}
+  }
+}

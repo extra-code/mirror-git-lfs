@@ -1,0 +1,69 @@
+# Shared base for every spec in this repository (Git LFS, published by the
+# git-lfs project).
+#
+# NOT a spec: it has no name/target/source and is never loaded on its own.
+# Everything a package owns — name, target, source, assets, asset_type,
+# bin_scan, metadata, catalog, tests, versions, announce, annotations — stays
+# in that package's own mirror.yml.
+#
+# ⚠️ `extends:` is a SHALLOW merge of top-level keys. A spec that sets a key
+# below replaces that block outright. `platforms:` carries both the runner
+# matrix and the container legs, so restate it in full or not at all.
+
+skip_prereleases: true
+cascade: true
+
+# Bare semver upstream versions; the date segment keeps every re-publish on its
+# own tag so a cascade move never orphans a digest a consumer pinned.
+build_timestamp: date
+
+verify:
+  github_asset_digest: true
+
+concurrency:
+  max_downloads: 6
+  max_bundles: 3
+  max_pushes: 2
+  rate_limit_ms: 100
+  max_retries: 3
+  compression_threads: 0
+
+# `off` with a hand-listed `binaries` claim: the PATH entry is the bare,
+# private `${installPath}`, which offers the scan no directory.
+bin_scan: "off"
+
+# ─── Platform matrix ────────────────────────────────────────────────────────
+#
+# The Linux builds are fully static Go binaries, so both Linux keys are BARE.
+# ubuntu (glibc) + alpine (musl) + fedora (another glibc) prove that claim.
+platforms:
+  linux/amd64:
+    runner: ubuntu-latest
+    containers: &linux_containers
+      - { image: "ubuntu:24.04", shell: bash }
+      - { image: "alpine:3.20", shell: sh }
+      - { image: "fedora:40", shell: bash }
+  linux/arm64:
+    # Native arm64 runner: container legs run without qemu.
+    runner: ubuntu-24.04-arm
+    containers: *linux_containers
+  darwin/amd64:
+    # Intel slice on the arm64 macos-14 runner via Rosetta 2.
+    runner: macos-14
+    prefix: ["arch", "-x86_64"]
+  darwin/arm64:
+    runner: macos-14
+    shell: bash
+  windows/amd64:
+    runner: windows-latest
+    shell: pwsh
+  windows/arm64:
+    runner: windows-11-arm
+    shell: pwsh
+  # No `containers:` on darwin or windows: those runners have no Linux
+  # container engine.
+
+notify:
+  discord:
+    webhook_secret: OCX_MIRROR_DISCORD_HOOK
+    user_id: "227748867204972545"  # pinged in-message on failures

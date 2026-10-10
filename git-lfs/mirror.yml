@@ -1,0 +1,65 @@
+# `platforms:` stays in ../mirror-base.yml: restating it here would replace the
+# whole block, container legs included.
+extends: ../mirror-base.yml
+
+name: git-lfs
+
+# Logical index package `git-lfs/git-lfs` at `ghcr.io/ocx-contrib/git-lfs/git-lfs`.
+# The namespace is the upstream organisation, github.com/git-lfs.
+target:
+  registry: ghcr.io
+  repository: ocx-contrib/git-lfs/git-lfs
+
+source:
+  type: github_release
+  owner: git-lfs
+  repo: git-lfs
+  tag_pattern: "^v(?P<version>\\d+\\.\\d+\\.\\d+)$"
+
+# One archive per platform, anchored at both ends. Not carried: 386, arm,
+# loong64, ppc64le, riscv64, s390x, freebsd (no ocx platform), the Windows
+# installer `.exe`, the source tarballs and the signed hash sidecars.
+assets:
+  linux/amd64:
+    - "^git-lfs-linux-amd64-v\\d+\\.\\d+\\.\\d+\\.tar\\.gz$"
+  linux/arm64:
+    - "^git-lfs-linux-arm64-v\\d+\\.\\d+\\.\\d+\\.tar\\.gz$"
+  darwin/amd64:
+    - "^git-lfs-darwin-amd64-v\\d+\\.\\d+\\.\\d+\\.zip$"
+  darwin/arm64:
+    - "^git-lfs-darwin-arm64-v\\d+\\.\\d+\\.\\d+\\.zip$"
+  windows/amd64:
+    - "^git-lfs-windows-amd64-v\\d+\\.\\d+\\.\\d+\\.zip$"
+  windows/arm64:
+    - "^git-lfs-windows-arm64-v\\d+\\.\\d+\\.\\d+\\.zip$"
+
+# Every archive wraps its payload in `git-lfs-<version>/`; stripping it lands
+# `git-lfs` (`git-lfs.exe`), `install.sh`, `man/` and the docs at the content
+# root.
+asset_type:
+  type: archive
+  strip_components: 1
+
+metadata:
+  default: metadata.json
+
+catalog:
+  logo: logo.svg
+
+versions:
+  # The first release whose assets carry a GitHub digest.
+  min: "3.7.0"
+  new_per_run: 5
+  poll_interval: "37 2-23/6 * * *"
+
+tests:
+  # `script:` resolves from the repository root.
+  - name: smoke
+    script: git-lfs/tests/smoke.star
+
+annotations:
+  org.opencontainers.image.licenses: "MIT"
+
+announce:
+  package: git-lfs/git-lfs
+  fork: ocx-contrib/index
